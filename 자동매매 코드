@@ -9,7 +9,7 @@ access = "IpA9tVuUxDMVozUA6XHfqs5TlTcHYeauTv9BxXoA"
 secret = "6Sv2eWaz1xObkkCSkl97VgSa6gXHSirqfE4bpIa6"
 
 
-def get_hpr(ticker): ## 
+def get_hpr(ticker):
     df = pyupbit.get_ohlcv(ticker, interval = "minute1", count = 61)
     ma5 = df['open'].rolling(5).mean().iloc[-1]
     ma5_1 = df['open'].rolling(5).mean().iloc[-2]
