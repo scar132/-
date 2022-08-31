@@ -1,0 +1,62 @@
+import pyupbit
+import numpy as np
+import pandas as pd
+
+btc = pyupbit.get_ohlcv("KRW-BTC", interval = "minute1", count = 10800)
+close = btc['close']
+print(close)
+
+print((close[0] + close[1] + close[2] + close[3] + close[4]) / 5) 
+print((close[1] + close[2] + close[3] + close[4] + close[5]) / 5)
+print((close[2] + close[3] + close[4] + close[5] + close[6]) / 5) 
+window = close.rolling(5)
+ma5 = window.mean()
+print(ma5)
+
+df = pyupbit.get_ohlcv("KRW-BTC")
+df = pd.DataFrame(df)
+df['ma5'] = df['close'].rolling(window=5).mean().shift(1)
+df['range'] = (df['high'] - df['low']) * 0.1
+df['target'] = df['open'] + df['range'].shift(1)
+df['bull'] = df['open'] > df['ma5'] 
+fee = 0.05
+df['ror'] = np.where((df['high'] > df['target']) & df['bull'], 
+                      df['close'] / df['target'] - fee,
+                      1) 
+df['hpr'] = df['ror'].cumprod()
+df['dd'] = (df['hpr'].cummax() - df['hpr']) / df['hpr'].cummax() * 100
+print("MDD: ", df['dd'].max())
+print("HPR: ", df['hpr'][-2])
+df.to_excel("larry_ma.xlsx")
+ 
+
+def get_hpr(ticker):
+    try:
+        df = pyupbit.get_ohlcv(ticker)
+        df = df['2021']
+
+        df['ma5'] = df['close'].rolling(window=5).mean().shift(1)
+        df['range'] = (df['high'] - df['low']) * 0.1
+        df['target'] = df['open'] + df['range'].shift(1)
+        df['bull'] = df['open'] > df['ma5']
+        fee = 0.05
+        df['ror'] = np.where((df['high'] > df['target']) & df['bull'],
+                            df['close'] / df['target'] - fee,
+                             1)
+
+        df['hpr'] = df['ror'].cumprod()
+        df['dd'] = (df['hpr'].cummax() - df['hpr']) / df['hpr'].cummax() * 100
+        return df['hpr'][-2]
+    except:
+       return 1
+
+
+tickers = pyupbit.get_tickers() 
+hprs = []
+for ticker in tickers:
+   hpr = get_hpr(ticker)
+   hprs.append((ticker, hpr))
+ 
+sorted_hprs = sorted(hprs, key=lambda x:x[1], reverse=True) 
+   
+print(sorted_hprs[:5])
